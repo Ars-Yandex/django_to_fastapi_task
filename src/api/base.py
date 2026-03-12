@@ -1,78 +1,49 @@
-from fastapi import APIRouter, status, HTTPException
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.sql import func
+from fastapi import APIRouter, status, HTTPException, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
-from src.schemas.posts import Post
 
-Base = declarative_base()
-
-class CategoryModel(Base):
-    __tablename__ = "categories"
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(256))
-    description = Column(Text)
-    slug = Column(String, unique=True, index=True)
-    is_published = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-class LocationModel(Base):
-    __tablename__ = "locations"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(256))
-    is_published = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-class PostModel(Base):
-    __tablename__ = "posts"
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(256))
-    text = Column(Text)
-    pub_date = Column(DateTime)
-    is_published = Column(Boolean, default=True)
-    image = Column(String, nullable=True) 
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
-    author_id = Column(Integer) 
-    location_id = Column(Integer, ForeignKey("locations.id"), nullable=True)
-    category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
-
-class CommentModel(Base):
-    __tablename__ = "comments"
-    id = Column(Integer, primary_key=True, index=True)
-    text = Column(Text)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    is_published = Column(Boolean, default=True)
-    
-    post_id = Column(Integer, ForeignKey("posts.id"))
-    author_id = Column(Integer)
+from src.schemas.posts import Post, PostCreate, PostUpdate
+from src.database import get_db
+from src.repositories.post import PostRepository
 
 router = APIRouter()
-fake_db = []
 
 @router.get("/posts", response_model=List[Post])
-async def get_posts():
-    """GET: Получение списка всех постов"""
-    return fake_db
+async def get_posts(db: AsyncSession = Depends(get_db)):
+    """GET: Получение списка всех постов через репозиторий."""
+    repository = PostRepository(db)
+    return await repository.get_all()
 
-@router.post("/posts", status_code=status.HTTP_201_CREATED, response_model=Post)
-async def create_post(post: Post):
-    """POST: Создание нового поста"""
-    fake_db.append(post)
+@router.get("/posts/{id}", response_model=Post)
+async def get_post_by_id(id: int, db: AsyncSession = Depends(get_db)):
+    """GET: Получение одного поста по ID."""
+    repository = PostRepository(db)
+    post = await repository.get_by_id(id)
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
     return post
 
-@router.put("/posts/{id}", response_model=Post)
-async def update_post(id: int, updated_post: Post):
-    """PUT: Обновление существующего поста по его индексу"""
-    if 0 <= id < len(fake_db):
-        fake_db[id] = updated_post
-        return updated_post
-    raise HTTPException(status_code=404, detail="Post not found")
+@router.post("/posts", status_code=status.HTTP_201_CREATED, response_model=Post)
+async def create_post(post_in: PostCreate, db: AsyncSession = Depends(get_db)):
+    """POST: Создание нового поста."""
+    repository = PostRepository(db)
+    return await repository.create(post_in.model_dump(), author_id=1)
 
-@router.delete("/posts/{id}")
-async def delete_post(id: int):
-    """DELETE: Удаление поста по его индексу"""
-    if 0 <= id < len(fake_db):
-        deleted_item = fake_db.pop(id)
-        return {"status": "deleted", "item_title": deleted_item.title}
-    raise HTTPException(status_code=404, detail="Post not found")
+@router.patch("/posts/{id}", response_model=Post)
+async def update_post(id: int, post_in: PostUpdate, db: AsyncSession = Depends(get_db)):
+    """PATCH: Частичное обновление поста."""
+    repository = PostRepository(db)
+    updated_post = await repository.update(id, post_in.model_dump(exclude_unset=True))
+    if not updated_post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return updated_post
+
+@router.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_post(id: int, db: AsyncSession = Depends(get_db)):
+    """DELETE: Удаление поста."""
+    repository = PostRepository(db)
+    post = await repository.get_by_id(id)
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    await repository.delete(id)
+    return None
