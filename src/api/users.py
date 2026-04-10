@@ -34,7 +34,7 @@ async def update_user(id: int, user_in: UserUpdate, session: AsyncSession = Depe
     repo = UserRepository(session)
     return await UpdateUserUseCase(repo).execute(id, user_in)
 
-@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{id}")
 async def delete_user(id: int, session: AsyncSession = Depends(get_db)):
     repo = UserRepository(session)
     return await DeleteUserUseCase(repo).execute(id)

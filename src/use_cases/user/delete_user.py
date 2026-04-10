@@ -1,14 +1,15 @@
-from fastapi import HTTPException
 from src.repositories.user import UserRepository
+from src.exceptions.database_exceptions import RecordNotFound
+from src.exceptions.domain_exceptions import UserNotFoundError
 
 class DeleteUserUseCase:
     def __init__(self, repo: UserRepository):
         self.repo = repo
 
     async def execute(self, user_id: int):
-        exists = await self.repo.get_by_id(user_id)
-        if not exists:
-            raise HTTPException(status_code=404, detail="User not found")
+        try:
+            await self.repo.delete(user_id)
+            return {"detail": f"Пользователь с ID {user_id} успешно удален"}
             
-        await self.repo.delete(user_id)
-        return {"detail": "User deleted successfully"}
+        except RecordNotFound:
+            raise UserNotFoundError(user_id)

@@ -44,7 +44,8 @@ async def update_comment(id: int, comm_in: CommentUpdate, session: AsyncSession 
     repo = CommentRepository(session)
     return await UpdateCommentUseCase(repo).execute(id, comm_in)
 
-@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{id}", status_code=status.HTTP_200_OK)
 async def delete_comment(id: int, session: AsyncSession = Depends(get_db)):
     repo = CommentRepository(session)
-    return await DeleteCommentUseCase(repo).execute(id)
+    result = await DeleteCommentUseCase(repo).execute(id)
+    return result

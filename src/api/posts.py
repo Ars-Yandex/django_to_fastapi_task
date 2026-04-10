@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
+from typing import List, Dict
 
 from src.schemas.posts import Post, PostCreate, PostUpdate
 from src.database import get_db
@@ -20,22 +20,16 @@ router = APIRouter(prefix="/posts", tags=["Posts"])
 
 @router.get("/", response_model=List[Post], summary="Get Posts")
 async def get_posts(db: AsyncSession = Depends(get_db)):
-    """Получить список всех постов с подгруженными связями."""
     repository = PostRepository(db)
     return await GetAllPostsUseCase(repository).execute()
 
 @router.get("/{id}", response_model=Post, summary="Get Post By Id")
 async def get_post_by_id(id: int, db: AsyncSession = Depends(get_db)):
-    """Получить пост по ID."""
     repository = PostRepository(db)
     return await GetPostByIdUseCase(repository).execute(id)
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=Post, summary="Create Post")
 async def create_post(post_in: PostCreate, db: AsyncSession = Depends(get_db)):
-    """
-    Создать новый пост. 
-    Валидирует существование автора (author_id), категории и локации.
-    """
     repository = PostRepository(db)
     cat_repo = CategoryRepository(db)
     loc_repo = LocationRepository(db)
@@ -51,10 +45,6 @@ async def create_post(post_in: PostCreate, db: AsyncSession = Depends(get_db)):
 
 @router.patch("/{id}", response_model=Post, summary="Update Post")
 async def update_post(id: int, post_in: PostUpdate, db: AsyncSession = Depends(get_db)):
-    """
-    Частичное обновление поста. 
-    Проверяет существование новых category_id или location_id, если они переданы.
-    """
     repository = PostRepository(db)
     cat_repo = CategoryRepository(db)
     loc_repo = LocationRepository(db)
@@ -66,8 +56,7 @@ async def update_post(id: int, post_in: PostUpdate, db: AsyncSession = Depends(g
     )
     return await use_case.execute(id, post_in)
 
-@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete Post")
+@router.delete("/{id}", status_code=status.HTTP_200_OK, summary="Delete Post")
 async def delete_post(id: int, db: AsyncSession = Depends(get_db)):
-    """Удалить пост."""
     repository = PostRepository(db)
     return await DeletePostUseCase(repository).execute(id)

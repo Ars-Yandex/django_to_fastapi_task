@@ -1,14 +1,14 @@
-from fastapi import HTTPException
 from src.repositories.comment import CommentRepository
+from src.exceptions.database_exceptions import RecordNotFound
+from src.exceptions.domain_exceptions import CommentNotFoundError
 
 class DeleteCommentUseCase:
     def __init__(self, repo: CommentRepository):
         self.repo = repo
 
     async def execute(self, comment_id: int):
-        db_comment = await self.repo.get_by_id(comment_id)
-        if not db_comment:
-            raise HTTPException(status_code=404, detail="Comment not found")
-            
-        await self.repo.delete(comment_id)
-        return {"detail": "Comment deleted"}
+        try:
+            await self.repo.delete(comment_id)
+            return {"detail": f"Комментарий с ID {comment_id} успешно удален"}
+        except RecordNotFound:
+            raise CommentNotFoundError(comment_id)
