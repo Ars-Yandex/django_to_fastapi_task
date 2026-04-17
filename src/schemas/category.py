@@ -46,7 +46,7 @@ class CategoryUpdate(BaseSchema):
     @field_validator('title', 'description', 'slug', mode='before')
     @classmethod
     def validate_optional_fields(cls, v: Optional[str]) -> Optional[str]:
-        """Для обновлений: если значение пришло, оно не должно быть пустым"""
+        """При обновлении значение не должно быть пустым"""
         if v is not None and isinstance(v, str):
             v = v.strip()
             if not v:

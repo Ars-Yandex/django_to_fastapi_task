@@ -11,7 +11,7 @@ class CommentBase(BaseSchema):
     @field_validator('text', mode='before')
     @classmethod
     def strip_text(cls, v: str) -> str:
-        """Удаляем лишние пробелы по краям и проверяем на пустоту"""
+        """Очищает строку от пробелов и проверяет на пустоту"""
         if isinstance(v, str):
             v = v.strip()
             if not v:
@@ -39,7 +39,7 @@ class CommentUpdate(BaseSchema):
     @field_validator('text', mode='before')
     @classmethod
     def validate_optional_text(cls, v: Optional[str]) -> Optional[str]:
-        """Для обновлений: если текст пришел, он не должен быть пустым"""
+        """При обновлении комментарий не должен быть пустым"""
         if v is not None:
             v = v.strip()
             if not v:

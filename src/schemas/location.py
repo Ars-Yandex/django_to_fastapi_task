@@ -11,7 +11,7 @@ class LocationBase(BaseSchema):
     @field_validator('name', mode='before')
     @classmethod
     def strip_name(cls, v: str) -> str:
-        """Предварительная очистка от пробелов"""
+        """Очищает строку от пробелов и проверяет на пустоту"""
         if isinstance(v, str):
             v = v.strip()
             if not v:

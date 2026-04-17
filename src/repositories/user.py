@@ -55,7 +55,6 @@ class UserRepository(BaseRepository):
 
         new_email = clean_data.get("email")
         if new_email and new_email != current_user.email:
-            # Ищем, не занята ли эта почта кем-то ДРУГИМ
             existing_user = await self.get_by_email(new_email)
             if existing_user:
                 raise AlreadyExists(model="User", field="email")

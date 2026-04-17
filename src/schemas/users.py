@@ -9,9 +9,12 @@ class UserBase(BaseSchema):
 
     @field_validator('username')
     @classmethod
-    def username_not_empty(cls, v: str) -> str:
-        if v is not None and not v.strip():
-            raise ValueError('Имя пользователя не может быть пустым или состоять только из пробелов')
+    def validate_username(cls, v: str) -> str:
+        if v is not None:
+            if ' ' in v:
+                raise ValueError('Имя пользователя не может содержать пробелы')
+            if not v.strip():
+                raise ValueError('Имя пользователя не может быть пустым')
         return v
 
 class UserCreate(UserBase):
@@ -25,9 +28,12 @@ class UserUpdate(BaseSchema):
 
     @field_validator('username')
     @classmethod
-    def username_not_empty(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and not v.strip():
-            raise ValueError('Имя пользователя не может быть пустым или состоять только из пробелов')
+    def validate_username(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            if ' ' in v:
+                raise ValueError('Имя пользователя не может содержать пробелы')
+            if not v.strip():
+                raise ValueError('Имя пользователя не может быть пустым')
         return v
 
 class User(UserBase):
