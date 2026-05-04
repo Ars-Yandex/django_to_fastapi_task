@@ -1,8 +1,8 @@
-"""Создание Таблиц
+"""Initial_with_cascades
 
-Revision ID: 3b0d06648243
+Revision ID: 9d20d2da71fc
 Revises: 
-Create Date: 2026-03-26 14:38:45.272393
+Create Date: 2026-05-04 13:14:57.512451
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '3b0d06648243'
+revision: str = '9d20d2da71fc'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -33,10 +33,12 @@ def upgrade() -> None:
     sa.Column('date_joined', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.Column('first_name', sa.String(length=150), nullable=True),
     sa.Column('last_name', sa.String(length=150), nullable=True),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_auth_user'))
     )
-    op.create_index(op.f('ix_auth_user_id'), 'auth_user', ['id'], unique=False)
-    op.create_index(op.f('ix_auth_user_username'), 'auth_user', ['username'], unique=True)
+    with op.batch_alter_table('auth_user', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_auth_user_id'), ['id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_auth_user_username'), ['username'], unique=True)
+
     op.create_table('blog_category',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(length=256), nullable=True),
@@ -44,18 +46,22 @@ def upgrade() -> None:
     sa.Column('slug', sa.String(), nullable=True),
     sa.Column('is_published', sa.Boolean(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_blog_category'))
     )
-    op.create_index(op.f('ix_blog_category_id'), 'blog_category', ['id'], unique=False)
-    op.create_index(op.f('ix_blog_category_slug'), 'blog_category', ['slug'], unique=True)
+    with op.batch_alter_table('blog_category', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_blog_category_id'), ['id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_blog_category_slug'), ['slug'], unique=True)
+
     op.create_table('blog_location',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=256), nullable=True),
     sa.Column('is_published', sa.Boolean(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_blog_location'))
     )
-    op.create_index(op.f('ix_blog_location_id'), 'blog_location', ['id'], unique=False)
+    with op.batch_alter_table('blog_location', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_blog_location_id'), ['id'], unique=False)
+
     op.create_table('blog_post',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(length=256), nullable=True),
@@ -67,12 +73,14 @@ def upgrade() -> None:
     sa.Column('author_id', sa.Integer(), nullable=False),
     sa.Column('location_id', sa.Integer(), nullable=True),
     sa.Column('category_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['author_id'], ['auth_user.id'], ),
-    sa.ForeignKeyConstraint(['category_id'], ['blog_category.id'], ),
-    sa.ForeignKeyConstraint(['location_id'], ['blog_location.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.ForeignKeyConstraint(['author_id'], ['auth_user.id'], name=op.f('fk_blog_post_author_id_auth_user'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['category_id'], ['blog_category.id'], name=op.f('fk_blog_post_category_id_blog_category'), ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['location_id'], ['blog_location.id'], name=op.f('fk_blog_post_location_id_blog_location'), ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_blog_post'))
     )
-    op.create_index(op.f('ix_blog_post_id'), 'blog_post', ['id'], unique=False)
+    with op.batch_alter_table('blog_post', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_blog_post_id'), ['id'], unique=False)
+
     op.create_table('blog_comment',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('text', sa.Text(), nullable=False),
@@ -80,27 +88,39 @@ def upgrade() -> None:
     sa.Column('is_published', sa.Boolean(), nullable=True),
     sa.Column('post_id', sa.Integer(), nullable=False),
     sa.Column('author_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['author_id'], ['auth_user.id'], ),
-    sa.ForeignKeyConstraint(['post_id'], ['blog_post.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.ForeignKeyConstraint(['author_id'], ['auth_user.id'], name=op.f('fk_blog_comment_author_id_auth_user'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['post_id'], ['blog_post.id'], name=op.f('fk_blog_comment_post_id_blog_post'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_blog_comment'))
     )
-    op.create_index(op.f('ix_blog_comment_id'), 'blog_comment', ['id'], unique=False)
+    with op.batch_alter_table('blog_comment', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_blog_comment_id'), ['id'], unique=False)
+
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_index(op.f('ix_blog_comment_id'), table_name='blog_comment')
+    with op.batch_alter_table('blog_comment', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_blog_comment_id'))
+
     op.drop_table('blog_comment')
-    op.drop_index(op.f('ix_blog_post_id'), table_name='blog_post')
+    with op.batch_alter_table('blog_post', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_blog_post_id'))
+
     op.drop_table('blog_post')
-    op.drop_index(op.f('ix_blog_location_id'), table_name='blog_location')
+    with op.batch_alter_table('blog_location', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_blog_location_id'))
+
     op.drop_table('blog_location')
-    op.drop_index(op.f('ix_blog_category_slug'), table_name='blog_category')
-    op.drop_index(op.f('ix_blog_category_id'), table_name='blog_category')
+    with op.batch_alter_table('blog_category', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_blog_category_slug'))
+        batch_op.drop_index(batch_op.f('ix_blog_category_id'))
+
     op.drop_table('blog_category')
-    op.drop_index(op.f('ix_auth_user_username'), table_name='auth_user')
-    op.drop_index(op.f('ix_auth_user_id'), table_name='auth_user')
+    with op.batch_alter_table('auth_user', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_auth_user_username'))
+        batch_op.drop_index(batch_op.f('ix_auth_user_id'))
+
     op.drop_table('auth_user')
     # ### end Alembic commands ###

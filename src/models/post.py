@@ -13,10 +13,16 @@ class PostModel(Base):
     image = Column(String, nullable=True) 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
-    author_id = Column(Integer, ForeignKey("auth_user.id"), nullable=False) 
-    location_id = Column(Integer, ForeignKey("blog_location.id"), nullable=True)
-    category_id = Column(Integer, ForeignKey("blog_category.id"), nullable=True)
+    author_id = Column(Integer, ForeignKey("auth_user.id", ondelete="CASCADE"), nullable=False) 
+    location_id = Column(Integer, ForeignKey("blog_location.id", ondelete="SET NULL"), nullable=True)
+    category_id = Column(Integer, ForeignKey("blog_category.id", ondelete="SET NULL"), nullable=True)
 
-    author = relationship("UserModel")
+    author = relationship("UserModel", back_populates="posts")
     location = relationship("LocationModel")
     category = relationship("CategoryModel")
+
+    comments = relationship(
+        "CommentModel", 
+        back_populates="post", 
+        cascade="all, delete-orphan"
+    )

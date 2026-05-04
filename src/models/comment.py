@@ -10,8 +10,16 @@ class CommentModel(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     is_published = Column(Boolean, default=True)
     
-    post_id = Column(Integer, ForeignKey("blog_post.id"), nullable=False)
-    author_id = Column(Integer, ForeignKey("auth_user.id"), nullable=False)
+    post_id = Column(
+        Integer, 
+        ForeignKey("blog_post.id", ondelete="CASCADE"), 
+        nullable=False
+    )
+    author_id = Column(
+        Integer, 
+        ForeignKey("auth_user.id", ondelete="CASCADE"), 
+        nullable=False
+    )
     
-    post = relationship("PostModel")
-    author = relationship("UserModel")
+    post = relationship("PostModel", back_populates="comments")
+    author = relationship("UserModel", back_populates="comments")

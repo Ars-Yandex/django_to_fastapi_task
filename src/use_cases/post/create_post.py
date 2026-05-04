@@ -2,7 +2,6 @@ from src.repositories.post import PostRepository
 from src.repositories.category import CategoryRepository
 from src.repositories.location import LocationRepository
 from src.repositories.user import UserRepository
-from src.schemas.posts import PostCreate
 from src.exceptions.database_exceptions import RecordNotFound
 from src.exceptions.domain_exceptions import (
     UserNotFoundError, 
@@ -18,8 +17,7 @@ class CreatePostUseCase:
         self.loc_repo = loc_repo
         self.user_repo = user_repo
 
-    async def execute(self, post_data: PostCreate):
-        data = post_data.model_dump()
+    async def execute(self, data: dict):
         author_id = data.pop("author_id")
         
         try:
@@ -38,9 +36,9 @@ class CreatePostUseCase:
                 raise UserNotFoundError(author_id)
             
             if e.model == "Category": 
-                raise CategoryNotFoundError(data["category_id"])
+                raise CategoryNotFoundError(data.get("category_id"))
             
             if e.model == "Location": 
-                raise LocationNotFoundError(data["location_id"])
+                raise LocationNotFoundError(data.get("location_id"))
                 
             raise

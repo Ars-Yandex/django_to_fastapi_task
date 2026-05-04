@@ -5,6 +5,12 @@ class DomainError(AppError):
         self.message = message
         super().__init__(self.message)
 
+# ========= Права доступа =========
+class ForbiddenError(DomainError):
+    def __init__(self, message: str = "У вас недостаточно прав для выполнения этого действия"):
+        self.message = message
+        super().__init__(self.message)
+
 # ========= Категории =========
 class CategoryNotFoundError(DomainError):
     def __init__(self, entity_id: int):

@@ -15,7 +15,6 @@ class UpdateCategoryUseCase:
         
         if "slug" in data:
             existing_category = await self.repo.get_by_slug(data["slug"])
-            
             if existing_category and existing_category.id != cat_id:
                 raise CategoryAlreadyExistsError(data["slug"])
 

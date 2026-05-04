@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import List
+
 from src.database import get_db
 from src.repositories.category import CategoryRepository
 from src.schemas.category import Category, CategoryCreate, CategoryUpdate
+from src.api.dependencies import get_current_user, get_current_admin
 
 from src.use_cases.category.get_all_categories import GetAllCategoriesUseCase
 from src.use_cases.category.get_category_by_id import GetCategoryByIdUseCase
@@ -12,13 +15,17 @@ from src.use_cases.category.delete_category import DeleteCategoryUseCase
 
 router = APIRouter(prefix="/categories", tags=["Categories"])
 
-@router.get("/", response_model=list[Category])
+@router.get("/", response_model=List[Category])
 async def get_categories(session: AsyncSession = Depends(get_db)):
     repo = CategoryRepository(session)
     return await GetAllCategoriesUseCase(repo).execute()
 
-@router.post("/", response_model=Category, status_code=201)
-async def create_category(cat_in: CategoryCreate, session: AsyncSession = Depends(get_db)):
+@router.post("/", response_model=Category, status_code=status.HTTP_201_CREATED)
+async def create_category(
+    cat_in: CategoryCreate, 
+    session: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
     repo = CategoryRepository(session)
     return await CreateCategoryUseCase(repo).execute(cat_in)
 
@@ -28,11 +35,20 @@ async def get_category(id: int, session: AsyncSession = Depends(get_db)):
     return await GetCategoryByIdUseCase(repo).execute(id)
 
 @router.patch("/{id}", response_model=Category)
-async def update_category(id: int, cat_in: CategoryUpdate, session: AsyncSession = Depends(get_db)):
+async def update_category(
+    id: int, 
+    cat_in: CategoryUpdate, 
+    session: AsyncSession = Depends(get_db),
+    admin=Depends(get_current_admin)
+):
     repo = CategoryRepository(session)
     return await UpdateCategoryUseCase(repo).execute(id, cat_in)
 
 @router.delete("/{id}")
-async def delete_category(id: int, session: AsyncSession = Depends(get_db)):
+async def delete_category(
+    id: int, 
+    session: AsyncSession = Depends(get_db),
+    admin=Depends(get_current_admin)
+):
     repo = CategoryRepository(session)
     return await DeleteCategoryUseCase(repo).execute(id)

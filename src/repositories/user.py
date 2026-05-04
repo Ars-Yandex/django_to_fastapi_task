@@ -75,6 +75,15 @@ class UserRepository(BaseRepository):
         await self.session.refresh(current_user)
         return current_user
 
+    async def update_last_login(self, user_id: int):
+        query = (
+            update(UserModel)
+            .where(UserModel.id == user_id)
+            .values(last_login=datetime.now())
+        )
+        await self.session.execute(query)
+        await self.session.commit()
+
     async def delete(self, user_id: int):
         await self.get_by_id(user_id)
         query = delete(UserModel).where(UserModel.id == user_id)

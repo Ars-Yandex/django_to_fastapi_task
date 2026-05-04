@@ -1,9 +1,11 @@
 from fastapi import APIRouter, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Dict
+from typing import List
 
 from src.schemas.posts import Post, PostCreate, PostUpdate
+from src.schemas.users import User as UserSchema
 from src.database import get_db
+from src.api.dependencies import get_current_user
 
 from src.repositories.post import PostRepository
 from src.repositories.category import CategoryRepository
@@ -29,7 +31,11 @@ async def get_post_by_id(id: int, db: AsyncSession = Depends(get_db)):
     return await GetPostByIdUseCase(repository).execute(id)
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=Post, summary="Create Post")
-async def create_post(post_in: PostCreate, db: AsyncSession = Depends(get_db)):
+async def create_post(
+    post_in: PostCreate, 
+    db: AsyncSession = Depends(get_db),
+    current_user: UserSchema = Depends(get_current_user)
+):
     repository = PostRepository(db)
     cat_repo = CategoryRepository(db)
     loc_repo = LocationRepository(db)
@@ -41,10 +47,19 @@ async def create_post(post_in: PostCreate, db: AsyncSession = Depends(get_db)):
         loc_repo=loc_repo, 
         user_repo=user_repo
     )
-    return await use_case.execute(post_in)
+    
+    post_data = post_in.model_dump()
+    post_data["author_id"] = current_user.id
+    
+    return await use_case.execute(post_data)
 
 @router.patch("/{id}", response_model=Post, summary="Update Post")
-async def update_post(id: int, post_in: PostUpdate, db: AsyncSession = Depends(get_db)):
+async def update_post(
+    id: int, 
+    post_in: PostUpdate, 
+    db: AsyncSession = Depends(get_db),
+    current_user: UserSchema = Depends(get_current_user)
+):
     repository = PostRepository(db)
     cat_repo = CategoryRepository(db)
     loc_repo = LocationRepository(db)
@@ -54,9 +69,16 @@ async def update_post(id: int, post_in: PostUpdate, db: AsyncSession = Depends(g
         cat_repo=cat_repo, 
         loc_repo=loc_repo
     )
-    return await use_case.execute(id, post_in)
+    
+    return await use_case.execute(id, post_in, current_user=current_user)
 
 @router.delete("/{id}", status_code=status.HTTP_200_OK, summary="Delete Post")
-async def delete_post(id: int, db: AsyncSession = Depends(get_db)):
+async def delete_post(
+    id: int, 
+    db: AsyncSession = Depends(get_db),
+    current_user: UserSchema = Depends(get_current_user)
+):
     repository = PostRepository(db)
-    return await DeletePostUseCase(repository).execute(id)
+    use_case = DeletePostUseCase(repository)
+    
+    return await use_case.execute(id, current_user=current_user)
