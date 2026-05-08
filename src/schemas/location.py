@@ -11,7 +11,6 @@ class LocationBase(BaseSchema):
     @field_validator('name', mode='before')
     @classmethod
     def strip_name(cls, v: str) -> str:
-        """Очищает строку от пробелов и проверяет на пустоту"""
         if isinstance(v, str):
             v = v.strip()
             if not v:
@@ -21,7 +20,6 @@ class LocationBase(BaseSchema):
     @field_validator('name')
     @classmethod
     def validate_name_content(cls, v: str) -> str:
-        """Разрешаем буквы (рус/англ), цифры и дефис"""
         if not re.match(r'^[a-zA-Zа-яА-Я0-9\s-]+$', v):
             raise ValueError(
                 'Название может содержать только буквы (русские/латинские), цифры, пробелы и дефис'

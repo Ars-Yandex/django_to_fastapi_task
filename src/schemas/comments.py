@@ -11,7 +11,6 @@ class CommentBase(BaseSchema):
     @field_validator('text', mode='before')
     @classmethod
     def strip_text(cls, v: str) -> str:
-        """Очищает строку от пробелов и проверяет на пустоту"""
         if isinstance(v, str):
             v = v.strip()
             if not v:
@@ -21,7 +20,6 @@ class CommentBase(BaseSchema):
     @field_validator('text')
     @classmethod
     def validate_text_content(cls, v: str) -> str:
-        """Проверка на допустимые символы (буквы, цифры, пунктуация)"""
         if not re.match(r'^[a-zA-Zа-яА-Я0-9\s.,!?\-:;()"\']+$', v):
             raise ValueError(
                 'Текст содержит недопустимые спецсимволы (разрешены буквы, цифры и знаки препинания)'
@@ -39,7 +37,6 @@ class CommentUpdate(BaseSchema):
     @field_validator('text', mode='before')
     @classmethod
     def validate_optional_text(cls, v: Optional[str]) -> Optional[str]:
-        """При обновлении комментарий не должен быть пустым"""
         if v is not None:
             v = v.strip()
             if not v:

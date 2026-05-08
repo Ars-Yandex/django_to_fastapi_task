@@ -11,7 +11,8 @@ from src.api.location import router as location_router
 from src.api.users import router as user_router
 from src.api.comment import router as comment_router
 from src.api.auth import router as auth_router
-from src.exceptions.domain_exceptions import DomainError
+
+from src.exceptions.base import AppError
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 LOG_DIR = BASE_DIR / "logs"
@@ -32,7 +33,6 @@ logger = logging.getLogger("uvicorn.error")
 def create_app() -> FastAPI:
     app = FastAPI(title="Yatube FastAPI Migration") 
     
-    # Настройка CORS
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -41,18 +41,20 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    @app.exception_handler(DomainError)
-    async def domain_error_handler(request: Request, exc: DomainError):
-        message_lc = exc.message.lower()
+    @app.exception_handler(AppError)
+    async def app_error_handler(request: Request, exc: AppError):
+        status_code = exc.status_code
         
-        if "не найден" in message_lc:
-            status_code = status.HTTP_404_NOT_FOUND
-        elif any(word in message_lc for word in ["уже существует", "занят", "занята"]):
-            status_code = status.HTTP_409_CONFLICT
-        elif any(word in message_lc for word in ["недостаточно прав", "не можете", "запрещено"]):
-            status_code = status.HTTP_403_FORBIDDEN
-        else:
-            status_code = status.HTTP_400_BAD_REQUEST
+        if status_code == 500:
+            message_lc = exc.message.lower()
+            if "не найден" in message_lc:
+                status_code = status.HTTP_404_NOT_FOUND
+            elif any(word in message_lc for word in ["уже существует", "занят", "занята"]):
+                status_code = status.HTTP_409_CONFLICT
+            elif any(word in message_lc for word in ["недостаточно прав", "не можете", "запрещено"]):
+                status_code = status.HTTP_403_FORBIDDEN
+            else:
+                status_code = status.HTTP_400_BAD_REQUEST
             
         return JSONResponse(
             status_code=status_code,

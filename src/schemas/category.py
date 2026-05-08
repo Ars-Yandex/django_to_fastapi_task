@@ -13,7 +13,6 @@ class CategoryBase(BaseSchema):
     @field_validator('title', 'description', 'slug', mode='before')
     @classmethod
     def strip_and_check_empty(cls, v: str) -> str:
-        """Очищает строку от пробелов и проверяет на пустоту"""
         if isinstance(v, str):
             v = v.strip()
             if not v:
@@ -23,7 +22,6 @@ class CategoryBase(BaseSchema):
     @field_validator('slug')
     @classmethod
     def validate_slug_full(cls, v: str) -> str:
-        """Проверка формата и краев слага"""
         if not re.match(r'^[-a-zA-Z0-9_]+$', v):
             raise ValueError(
                 'В слаге могут использоваться только латинские буквы, цифры, дефис и нижнее подчеркивание'
@@ -46,7 +44,6 @@ class CategoryUpdate(BaseSchema):
     @field_validator('title', 'description', 'slug', mode='before')
     @classmethod
     def validate_optional_fields(cls, v: Optional[str]) -> Optional[str]:
-        """При обновлении значение не должно быть пустым"""
         if v is not None and isinstance(v, str):
             v = v.strip()
             if not v:
@@ -57,7 +54,6 @@ class CategoryUpdate(BaseSchema):
     @field_validator('slug')
     @classmethod
     def validate_optional_slug_format(cls, v: Optional[str]) -> Optional[str]:
-        """Проверка формата слага для обновлений"""
         if v:
             if not re.match(r'^[-a-zA-Z0-9_]+$', v):
                 raise ValueError(

@@ -16,7 +16,6 @@ class PostBase(BaseSchema):
     @field_validator('title', 'text', mode='before')
     @classmethod
     def not_empty(cls, v: str) -> str:
-        """Очищает строку от пробелов и проверяет на пустоту"""
         if isinstance(v, str):
             v = v.strip()
             if not v:

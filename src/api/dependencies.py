@@ -1,9 +1,15 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
+
 from src.database import get_db
 from src.repositories.user import UserRepository
 from src.services.auth_service import AuthService
-from src.exceptions.domain_exceptions import ForbiddenError # Импортируем твою ошибку
+from src.exceptions.domain_exceptions import ForbiddenError
+from src.exceptions.auth_exceptions import (
+    InvalidTokenError, 
+    UserIDNotFoundError, 
+    UserAuthNotFoundError
+)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
@@ -16,26 +22,18 @@ async def get_current_user(
     
     payload = auth_service.decode_token(token)
     if not payload:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Невалидный токен или срок действия истек",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise InvalidTokenError()
     
     user_id: str = payload.get("sub")
     if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Токен не содержит идентификатор пользователя",
-        )
+        raise UserIDNotFoundError()
     
     try:
         user = await user_repo.get_by_id(int(user_id))
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Пользователь не найден",
-        )
+        if user is None:
+            raise UserAuthNotFoundError()
+    except (Exception, ValueError):
+        raise UserAuthNotFoundError()
         
     return user
 
